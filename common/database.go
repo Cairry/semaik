@@ -1,8 +1,8 @@
 package common
 
 import (
+	"dockerapi/app/model"
 	"dockerapi/global"
-	"dockerapi/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"log"

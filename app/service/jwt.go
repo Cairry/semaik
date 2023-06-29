@@ -51,7 +51,7 @@ func (jwtService *jwtService) CreateToken(GuardName string, user JwtUser) (token
 	tokenStr, err := token.SignedString([]byte("zux"))
 	tokenData = TokenOutPut{
 		tokenStr,
-		int(Expire),
+		Expire,
 		TokenType,
 	}
 	return
