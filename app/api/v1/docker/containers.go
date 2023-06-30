@@ -8,71 +8,134 @@ import (
 	"net/http"
 )
 
-func ContainersList(c *gin.Context) {
+type ContainersApi struct {
+	containerService containers2.ContainerService
+}
 
-	containersList := containers2.ContainersList()
-	response.Success(c, containersList, "请求成功")
+//	@Summary	获取所有容器列表
+//	@Tags		容器
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/list [get]
+func (container ContainersApi) List(ctx *gin.Context) {
+
+	containersList := container.containerService.List()
+	response.Success(ctx, containersList, "请求成功")
 
 }
 
-func ContainerCreate(c *gin.Context) {
+//	@Summary	获取指定容器
+//	@Tags		容器
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/Search [post]
+func (container ContainersApi) Search(ctx *gin.Context) {
+
+	var req containers2.ContainerListStruct
+	_ = ctx.ShouldBindJSON(&req)
+	containersList := container.containerService.Search(req.Name)
+	response.Success(ctx, containersList, "查询成功")
+
+}
+
+//	@Summary	创建容器
+//	@Tags		容器
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/create [post]
+func (container ContainersApi) Create(ctx *gin.Context) {
 
 	var req containers2.ContainerCreateStruct
-	_ = c.ShouldBindJSON(&req)
-	err := containers2.ContainerCreate(req)
+	_ = ctx.ShouldBindJSON(&req)
+	err := container.containerService.Create(req)
 	if err != nil {
-		response.Fail(c, nil, "创建失败")
+		response.Fail(ctx, nil, "创建失败")
 	} else {
-		response.Success(c, req, "创建成功")
+		response.Success(ctx, req, "创建成功")
 	}
 
 }
 
-func ContainerOptions(c *gin.Context) {
+//	@Summary	容器操作选项
+//	@Tags		容器
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/option [post]
+func (container ContainersApi) Options(ctx *gin.Context) {
 
 	var req containers2.ContainerOperationStruct
-	_ = c.ShouldBindJSON(&req)
-	err := containers2.ContainerOptions(req)
+	_ = ctx.ShouldBindJSON(&req)
+	err := container.containerService.Options(req)
 	if err != nil {
-		response.Fail(c, req.Operation, err.Error())
+		response.Fail(ctx, req.Operation, err.Error())
 	} else {
-		response.Success(c, req.Operation, "操作成功")
+		response.Success(ctx, req.Operation, "操作成功")
 	}
 
 }
 
-func ContainerLogs(c *gin.Context) {
+//	@Summary	容器日志
+//	@Tags		容器
+//	@Produce	json
+//	@Param		containerName 	path	string	true	"容器名称"
+//	@Param		containerId		path	string	true	"容器ID"
+//	@Param		isWatch			path	bool	false	"是否监听日志"
+//	@Param		mode			path	string	false	"获取日志范围, all,1m,10m..."
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/log [post]
+func (container ContainersApi) Logs(ctx *gin.Context) {
 	var req containers2.ContainerLogsStruct
-	_ = c.ShouldBindJSON(&req)
-	out, err := containers2.ContainerLogs(req)
+	_ = ctx.ShouldBindJSON(&req)
+	out, err := container.containerService.Logs(req)
 	if err != nil {
-		response.Fail(c, out, err.Error())
+		response.Fail(ctx, out, err.Error())
 	} else {
-		response.Success(c, out, "操作成功")
+		response.Success(ctx, out, "操作成功")
 	}
 
 }
 
-func ContainerState(c *gin.Context) {
+//	@Summary	获取容器资源
+//	@Tags		容器
+//	@Produce	json
+//	@Param		containerId 	path	string	true	"容器ID"
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/state/:id [get]
+func (container ContainersApi) State(ctx *gin.Context) {
 
-	containerID, ok := c.Params.Get("id")
+	containerID, ok := ctx.Params.Get("id")
 	if !ok {
-		response.Fail(c, ok, "请求失败")
+		response.Fail(ctx, ok, "请求失败")
 		return
 	}
 
-	res, err := containers2.ContainerState(containerID)
+	res, err := container.containerService.State(containerID)
 	if err != nil {
-		response.Fail(c, err, "请求失败")
+		response.Fail(ctx, err, "请求失败")
 		return
 	} else {
-		response.Success(c, res, "请求成功")
+		response.Success(ctx, res, "请求成功")
 		return
 	}
 
 }
 
-func ContainerWsSsh(c *gin.Context) {
+//	@Summary	容器终端
+//	@Tags		容器
+//	@Produce	json
+//	@Param		containerId 	path	string	true	"容器ID"
+//	@Param		user			path	string	true	"user"
+//	@Param		command			path	string	true	"执行命令"
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/containers/state/:id [get]
+func (container ContainersApi) Ssh(ctx *gin.Context) {
 
 	// 升级连接为 WebSocket
 	upgrader := websocket.Upgrader{
@@ -84,9 +147,9 @@ func ContainerWsSsh(c *gin.Context) {
 	}
 
 	// websocket 握手
-	wsConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+	wsConn, err := upgrader.Upgrade(ctx.Writer, ctx.Request, nil)
 	if err != nil {
-		response.Fail(c, err.Error(), "请求失败")
+		response.Fail(ctx, err.Error(), "请求失败")
 		return
 	}
 
@@ -94,16 +157,16 @@ func ContainerWsSsh(c *gin.Context) {
 
 	// 容器信息
 	req := containers2.ContainerWsSshStruct{
-		ContainerID: c.Query("containerID"),
-		User:        c.Query("user"),
-		Command:     []string{c.Query("command")},
+		ContainerID: ctx.Query("containerID"),
+		User:        ctx.Query("user"),
+		Command:     []string{ctx.Query("command")},
 	}
 
-	err = containers2.ContainerSsh(req, c, wsConn)
+	err = container.containerService.Ssh(req, ctx, wsConn)
 	if err != nil {
-		response.Fail(c, err, "连接失败")
+		response.Fail(ctx, err, "连接失败")
 		return
 	}
-	response.Success(c, "", "连接成功")
+	response.Success(ctx, "", "连接成功")
 
 }

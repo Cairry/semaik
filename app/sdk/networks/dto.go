@@ -4,15 +4,15 @@ import (
 	"time"
 )
 
-type Networks struct {
-	Name    string
-	ID      string
-	Driver  string
-	Scope   string
-	Created time.Time
+type NetworkList struct {
+	Name    string    `json:"name"`
+	ID      string    `json:"id"`
+	Driver  string    `json:"driver"`
+	Scope   string    `json:"scope"`
+	Created time.Time `json:"created"`
 }
 
-type NetworksCreateStruct struct {
+type NetworkCreateStruct struct {
 	Name       string            `json:"name"`
 	Driver     string            `json:"driver"`
 	EnableIPAM bool              `json:"enableIPAM"`

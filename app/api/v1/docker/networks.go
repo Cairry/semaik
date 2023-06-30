@@ -6,35 +6,71 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func NetworksList(c *gin.Context) {
+type NetworksApi struct {
+	networkService networks2.NetworkService
+}
 
-	networkList := networks2.NetworksList()
-	response.Success(c, networkList, "请求成功")
+//	@Summary	获取所有网络列表
+//	@Tags		网络
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/networks/list [get]
+func (network NetworksApi) List(ctx *gin.Context) {
+
+	networkList := network.networkService.List()
+	response.Success(ctx, networkList, "请求成功")
 
 }
 
-func NetworksCreate(c *gin.Context) {
+//	@Summary	搜索网络
+//	@Tags		网络
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/networks/search [post]
+func (network NetworksApi) Search(ctx *gin.Context) {
 
-	var req networks2.NetworksCreateStruct
-	_ = c.ShouldBindJSON(&req)
-	err := networks2.NetworkCreate(req)
+	var req networks2.NetworkList
+	_ = ctx.ShouldBindJSON(&req)
+	networkList := network.networkService.Search(req.Name)
+	response.Success(ctx, networkList, "查询成功")
+}
+
+//	@Summary	创建网络
+//	@Tags		网络
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/networks/create [post]
+func (network NetworksApi) Create(ctx *gin.Context) {
+
+	var req networks2.NetworkCreateStruct
+	_ = ctx.ShouldBindJSON(&req)
+	err := network.networkService.Create(req)
 	if err != nil {
-		response.Fail(c, err.Error(), "创建失败")
+		response.Fail(ctx, err.Error(), "创建失败")
 	} else {
-		response.Success(c, req, "创建成功")
+		response.Success(ctx, req, "创建成功")
 	}
 
 }
 
-func NetworkDelete(c *gin.Context) {
+//	@Summary	删除网络
+//	@Tags		网络
+//	@Produce	json
+//	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
+//  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
+//	@Router		/api/v1/networks/delete [post]
+func (network NetworksApi) Delete(ctx *gin.Context) {
 
 	var req networks2.NetworkDeleteStruct
-	_ = c.ShouldBindJSON(&req)
-	err := networks2.NetworkDelete(req)
+	_ = ctx.ShouldBindJSON(&req)
+	err := network.networkService.Delete(req)
 	if err != nil {
-		response.Fail(c, err.Error(), "删除失败")
+		response.Fail(ctx, err.Error(), "删除失败")
 	} else {
-		response.Success(c, req, "删除成功")
+		response.Success(ctx, req, "删除成功")
 	}
 
 }

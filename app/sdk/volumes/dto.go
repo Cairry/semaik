@@ -1,11 +1,11 @@
 package volumes
 
-type Volume struct {
-	CreatedAt string
-	Driver    string
-	Name      string
-	Scope     string
-	Status    map[string]interface{}
+type VolumeList struct {
+	CreatedAt string                 `json:"createdAt"`
+	Driver    string                 `json:"driver"`
+	Name      string                 `json:"name"`
+	Scope     string                 `json:"scope"`
+	Status    map[string]interface{} `json:"status"`
 }
 
 type VolumeCreateStruct struct {

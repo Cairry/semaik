@@ -1,13 +1,16 @@
 package containers
 
-import "time"
+import (
+	"time"
+)
 
 // ContainerListStruct 容器列表
 type ContainerListStruct struct {
 	ID      string
-	Names   string
+	Name    string
 	Image   string
 	ImageID string
+	Ports   []string
 	Created time.Time
 	State   string
 	Status  string

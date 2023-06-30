@@ -1,0 +1,275 @@
+info:
+  contact: {}
+paths:
+  /api/v1/containers/create:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 创建容器
+      tags:
+      - 容器
+  /api/v1/containers/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取所有容器列表
+      tags:
+      - 容器
+  /api/v1/containers/log:
+    post:
+      parameters:
+      - description: 容器名称
+        in: path
+        name: containerName
+        required: true
+        type: string
+      - description: 容器ID
+        in: path
+        name: containerId
+        required: true
+        type: string
+      - description: 是否监听日志
+        in: path
+        name: isWatch
+        type: boolean
+      - description: 获取日志范围, all,1m,10m...
+        in: path
+        name: mode
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 容器日志
+      tags:
+      - 容器
+  /api/v1/containers/option:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 容器操作选项
+      tags:
+      - 容器
+  /api/v1/containers/state/:id:
+    get:
+      parameters:
+      - description: 容器ID
+        in: path
+        name: containerId
+        required: true
+        type: string
+      - description: user
+        in: path
+        name: user
+        required: true
+        type: string
+      - description: 执行命令
+        in: path
+        name: command
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 容器终端
+      tags:
+      - 容器
+  /api/v1/images/delete:
+    post:
+      parameters:
+      - description: 镜像名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 删除镜像
+      tags:
+      - 镜像
+  /api/v1/images/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取所有镜像
+      tags:
+      - 镜像
+  /api/v1/images/pull:
+    post:
+      parameters:
+      - description: 镜像名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 拉取镜像
+      tags:
+      - 镜像
+  /api/v1/networks/create:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 创建网络
+      tags:
+      - 网络
+  /api/v1/networks/delete:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 删除网络
+      tags:
+      - 网络
+  /api/v1/networks/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取所有网络列表
+      tags:
+      - 网络
+  /api/v1/volumes/create:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 创建卷
+      tags:
+      - 卷
+  /api/v1/volumes/delete:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 删除卷
+      tags:
+      - 卷
+  /api/v1/volumes/list:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取所有卷
+      tags:
+      - 卷
+swagger: "2.0"

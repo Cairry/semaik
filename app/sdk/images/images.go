@@ -2,6 +2,7 @@ package images
 
 import (
 	"dockerapi/app/sdk"
+	"dockerapi/utils"
 	"github.com/docker/docker/api/types"
 	"io"
 	"log"
@@ -10,11 +11,13 @@ import (
 	"time"
 )
 
+type ImageService struct{}
+
 /*
-	ImagesList
+	List
 	读取所有镜像
 */
-func ImagesList() []ImageStruct {
+func (is ImageService) List() []ImageStruct {
 
 	// 读取镜像列表
 	images, err := sdk.DockerClient.ImageList(sdk.DockerCtx, types.ImageListOptions{All: true})
@@ -30,11 +33,10 @@ func ImagesList() []ImageStruct {
 
 		// 临时读取镜像列表
 		tmp := ImageStruct{
-			Created:    time.Unix(image.Created, 0),
-			ID:         strings.Split(image.ID, ":")[1][:10],
-			Repository: strings.Split(image.RepoTags[0], ":")[0],
-			RepoTags:   strings.Split(image.RepoTags[0], ":")[1],
-			Size:       image.Size,
+			Created: time.Unix(image.Created, 0),
+			ID:      strings.Split(image.ID, ":")[1][:10],
+			Tags:    image.RepoTags,
+			Size:    utils.FormatFileSize(image.Size),
 		}
 
 		// 将临时读取到的列表数据加入到初始化后的镜像列表中
@@ -47,10 +49,10 @@ func ImagesList() []ImageStruct {
 }
 
 /*
-	PullImage
+	Pull
 	拉取镜像
 */
-func PullImage(imageName string) error {
+func (is ImageService) Pull(imageName string) error {
 
 	// 拉取镜像
 	reader, err := sdk.DockerClient.ImagePull(sdk.DockerCtx, imageName, types.ImagePullOptions{})
@@ -71,13 +73,59 @@ func PullImage(imageName string) error {
 }
 
 /*
-	ImageDelete
+	Delete
 	删除镜像
 */
-func ImageDelete(req ImageOperationStruct) error {
+func (is ImageService) Delete(req ImageOperationStruct) error {
 
 	_, err := sdk.DockerClient.ImageRemove(sdk.DockerCtx, req.Name, types.ImageRemoveOptions{})
 
 	return err
+
+}
+
+/*
+	Search
+	搜索镜像
+*/
+func (is ImageService) Search(info string) []ImageStruct {
+
+	images, err := sdk.DockerClient.ImageList(sdk.DockerCtx, types.ImageListOptions{All: true})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var newList []types.ImageSummary
+
+	// 判断用户是否有搜索内容
+	if len(info) != 0 {
+		length, count := len(images), 0
+		for count < length {
+			for _, v := range images[count].RepoTags {
+				if strings.Contains(v, info) {
+					newList = append(newList, images[count])
+					break
+				}
+			}
+			count++
+		}
+	} else {
+		newList = images
+	}
+
+	// 初始化镜像列表，长度为读取到的数据列表长度
+	result := make([]ImageStruct, 0, len(newList))
+
+	for _, image := range newList {
+		tmp := ImageStruct{
+			Created: time.Unix(image.Created, 0),
+			ID:      image.ID,
+			Tags:    image.RepoTags,
+			Size:    utils.FormatFileSize(image.Size),
+		}
+		result = append(result, tmp)
+	}
+
+	return result
 
 }

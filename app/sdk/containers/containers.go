@@ -3,6 +3,7 @@ package containers
 import (
 	"dockerapi/app/sdk"
 	"dockerapi/app/sdk/images"
+	"dockerapi/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/docker/docker/api/types"
@@ -10,7 +11,6 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"io"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -18,11 +18,13 @@ import (
 	"time"
 )
 
+type ContainerService struct{}
+
 /*
-	ContainersList
+	List
 	获取容器列表
 */
-func ContainersList() []ContainerListStruct {
+func (cs ContainerService) List() []ContainerListStruct {
 
 	// 获取容器列表
 	containers, err := sdk.DockerClient.ContainerList(sdk.DockerCtx, types.ContainerListOptions{All: true})
@@ -35,12 +37,22 @@ func ContainersList() []ContainerListStruct {
 
 	for _, container := range containers {
 
+		var ports []string
+		for _, port := range container.Ports {
+			if port.IP == "::" || port.PublicPort == 0 {
+				continue
+			}
+			tmp := fmt.Sprintf("%d:%d/%s", port.PublicPort, port.PrivatePort, port.Type)
+			ports = append(ports, tmp)
+		}
+
 		// 读取容器列表数据
 		tmp := ContainerListStruct{
 			ID:      container.ID[:10],
-			Names:   container.Names[0][1:],
+			Name:    container.Names[0][1:],
 			Image:   container.Image,
 			ImageID: strings.Split(container.ImageID, ":")[1][:10],
+			Ports:   ports,
 			Created: time.Unix(container.Created, 0),
 			State:   container.State,
 			Status:  container.Status,
@@ -56,10 +68,70 @@ func ContainersList() []ContainerListStruct {
 }
 
 /*
-	ContainerCreate
+	Search
+	获取指定容器
+*/
+func (cs ContainerService) Search(info string) []ContainerListStruct {
+
+	containers, err := sdk.DockerClient.ContainerList(sdk.DockerCtx, types.ContainerListOptions{})
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var containerList []types.Container
+
+	if len(info) != 0 {
+		length, count := len(containers), 0
+		fmt.Println("container ->", length)
+		for count < length {
+			for _, v := range containers[count].Names {
+				if strings.Contains(v, info) {
+					containerList = append(containerList, containers[count])
+					break
+				}
+			}
+			count++
+		}
+	} else {
+		containerList = containers
+	}
+
+	var result []ContainerListStruct
+
+	for _, container := range containerList {
+		var ports []string
+		for _, port := range container.Ports {
+			if port.IP == "::" || port.PublicPort == 0 {
+				continue
+			}
+			tmp := fmt.Sprintf("%d:%d/%s", port.PublicPort, port.PrivatePort, port.Type)
+			ports = append(ports, tmp)
+		}
+
+		// 读取容器列表数据
+		tmp := ContainerListStruct{
+			ID:      container.ID[:10],
+			Name:    container.Names[0][1:],
+			Image:   container.Image,
+			ImageID: strings.Split(container.ImageID, ":")[1][:10],
+			Ports:   ports,
+			Created: time.Unix(container.Created, 0),
+			State:   container.State,
+			Status:  container.Status,
+		}
+
+		// 将容器列表数据写入到初始化的容器列表的切片中
+		result = append(result, tmp)
+	}
+
+	return result
+}
+
+/*
+	Create
 	创建容器
 */
-func ContainerCreate(req ContainerCreateStruct) error {
+func (cs ContainerService) Create(req ContainerCreateStruct) error {
 
 	// 定义创建容器时的配置信息
 	config := &container.Config{
@@ -72,21 +144,21 @@ func ContainerCreate(req ContainerCreateStruct) error {
 	}
 
 	var (
-		hostConfg container.HostConfig
+		hostConfig container.HostConfig
 	)
 
 	// 判断是否开启资源限制
 	if req.EnableResourceList {
-		hostConfg.NanoCPUs = req.NanoCPUs * 1000000000
-		hostConfg.Memory = req.Memory
+		hostConfig.NanoCPUs = req.NanoCPUs * 1000000000
+		hostConfig.Memory = req.Memory
 	}
 
 	// 判断是否暴露端口
 	if req.EnablePublicPort {
-		hostConfg.PortBindings = make(nat.PortMap)
+		hostConfig.PortBindings = make(nat.PortMap)
 		for _, port := range req.ExposedPorts {
 			bindItem := nat.PortBinding{HostPort: strconv.Itoa(port.HostPort)}
-			hostConfg.PortBindings[nat.Port(fmt.Sprintf("%d/tcp", port.ContainerPort))] = []nat.PortBinding{bindItem}
+			hostConfig.PortBindings[nat.Port(fmt.Sprintf("%d/tcp", port.ContainerPort))] = []nat.PortBinding{bindItem}
 		}
 	}
 
@@ -95,19 +167,19 @@ func ContainerCreate(req ContainerCreateStruct) error {
 		config.Volumes = make(map[string]struct{})
 		for _, volume := range req.Volumes {
 			config.Volumes[volume.ContainerDir] = struct{}{}
-			hostConfg.Binds = append(hostConfg.Binds, fmt.Sprintf("%s:%s:%s", volume.SourceDir, volume.ContainerDir, volume.Mode))
+			hostConfig.Binds = append(hostConfig.Binds, fmt.Sprintf("%s:%s:%s", volume.SourceDir, volume.ContainerDir, volume.Mode))
 		}
 	}
 
 	// 拉取镜像
-	err := images.PullImage(req.Image)
+	err := images.ImageService{}.Pull(req.Image)
 	if err != nil {
 		log.Println("Image pull failed:", err)
 		return err
 	}
 
 	// 创建容器
-	resp, err := sdk.DockerClient.ContainerCreate(sdk.DockerCtx, config, &hostConfg, nil, nil, req.Name)
+	resp, err := sdk.DockerClient.ContainerCreate(sdk.DockerCtx, config, &hostConfig, nil, nil, req.Name)
 	if err != nil {
 		log.Println("Container Create failed:", err)
 		return err
@@ -124,10 +196,10 @@ func ContainerCreate(req ContainerCreateStruct) error {
 }
 
 /*
-	ContainerOptions
+	Options
 	容器操作选项
 */
-func ContainerOptions(req ContainerOperationStruct) error {
+func (cs ContainerService) Options(req ContainerOperationStruct) error {
 
 	var (
 		err error
@@ -164,10 +236,10 @@ func ContainerOptions(req ContainerOperationStruct) error {
 }
 
 /*
-	ContainerLogs
+	Logs
 	获取容器日志
 */
-func ContainerLogs(req ContainerLogsStruct) (string, error) {
+func (cs ContainerService) Logs(req ContainerLogsStruct) (string, error) {
 
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
@@ -193,10 +265,10 @@ func ContainerLogs(req ContainerLogsStruct) (string, error) {
 }
 
 /*
-	ContainerState
+	State
 	获取容器资源利用率
 */
-func ContainerState(id string) (*ContainerStats, error) {
+func (cs ContainerService) State(id string) (*ContainerStats, error) {
 
 	res, err := sdk.DockerClient.ContainerStats(sdk.DockerCtx, id, false)
 	if err != nil {
@@ -219,102 +291,27 @@ func ContainerState(id string) (*ContainerStats, error) {
 
 	preCpu := stats.PreCPUStats.CPUUsage.TotalUsage
 	preSystem := stats.PreCPUStats.SystemUsage
-	data.CPUPercent = calculateCPUPercentUnix(preCpu, preSystem, stats)
-	data.IORead, data.IOWrite = calculateBlockIO(stats.BlkioStats)
+	data.CPUPercent = utils.CalculateCPUPercentUnix(preCpu, preSystem, stats)
+	data.IORead, data.IOWrite = utils.CalculateBlockIO(stats.BlkioStats)
 	data.Memory = float64(stats.MemoryStats.Usage) / 1024 / 1024
 	if cache, ok := stats.MemoryStats.Stats["cache"]; ok {
 		data.Cache = float64(cache) / 1024 / 1024
 	}
 	data.Memory = data.Memory - data.Cache
-	data.NetworkRX, data.NetworkTX = calculateNetwork(stats.Networks)
+	data.NetworkRX, data.NetworkTX = utils.CalculateNetwork(stats.Networks)
 	data.ShotTime = stats.Read
 	return &data, nil
 
 }
 
-// 计算cpu
-func calculateCPUPercentUnix(previousCPU, previousSystem uint64, v *types.StatsJSON) float64 {
-	var (
-		cpuPercent  = 0.0
-		cpuDelta    = float64(v.CPUStats.CPUUsage.TotalUsage) - float64(previousCPU)
-		systemDelta = float64(v.CPUStats.SystemUsage) - float64(previousSystem)
-	)
-
-	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = (cpuDelta / systemDelta) * float64(len(v.CPUStats.CPUUsage.PercpuUsage)) * 100.0
-	}
-	return cpuPercent
-}
-
-// 计算io
-func calculateBlockIO(blkio types.BlkioStats) (blkRead float64, blkWrite float64) {
-	for _, bioEntry := range blkio.IoServiceBytesRecursive {
-		switch strings.ToLower(bioEntry.Op) {
-		case "read":
-			blkRead = (blkRead + float64(bioEntry.Value)) / 1024 / 1024
-		case "write":
-			blkWrite = (blkWrite + float64(bioEntry.Value)) / 1024 / 1024
-		}
-	}
-	return
-}
-
-// 计算网卡
-func calculateNetwork(network map[string]types.NetworkStats) (float64, float64) {
-	var rx, tx float64
-
-	for _, v := range network {
-		rx += float64(v.RxBytes) / 1024
-		tx += float64(v.TxBytes) / 1024
-	}
-	return rx, tx
-}
-
 /*
-	ContainerSsh
+	Ssh
 	连接容器终端
 */
-
-func execContainer(containerID string, user string, command []string) (hr types.HijackedResponse, err error) {
-
-	//exec 配置
-	execConfig := types.ExecConfig{
-		AttachStdin:  true,
-		AttachStdout: true,
-		AttachStderr: true,
-		Tty:          true,
-		User:         user,
-		Cmd:          command,
-	}
-
-	//创建 exec 实例
-	exec, err := sdk.DockerClient.ContainerExecCreate(sdk.DockerCtx, containerID, execConfig)
-	if err != nil {
-		log.Println("创建 exec 实例错误:", err)
-		return
-	}
-
-	// Attach 配置
-	attachConfig := types.ExecStartCheck{
-		Tty:    true,
-		Detach: false,
-	}
-
-	// 连接 Container
-	resp, err := sdk.DockerClient.ContainerExecAttach(sdk.DockerCtx, exec.ID, attachConfig)
-	if err != nil {
-		log.Println("连接 Container 错误:", err)
-		return
-	}
-
-	return resp, nil
-
-}
-
-func ContainerSsh(req ContainerWsSshStruct, c *gin.Context, wsConn *websocket.Conn) (err error) {
+func (cs ContainerService) Ssh(req ContainerWsSshStruct, c *gin.Context, wsConn *websocket.Conn) (err error) {
 
 	// 连接容器
-	execResp, err := execContainer(req.ContainerID, req.User, req.Command)
+	execResp, err := utils.ExecContainer(req.ContainerID, req.User, req.Command)
 	if err != nil {
 		log.Println("请求失败")
 		return err
@@ -328,49 +325,12 @@ func ContainerSsh(req ContainerWsSshStruct, c *gin.Context, wsConn *websocket.Co
 
 	// 开启协程实时监听终端反馈的数据
 	go func() {
-		wsWriterCopy(execResp.Conn, wsConn)
+		utils.WsWriterCopy(execResp.Conn, wsConn)
 	}()
 
 	// 程序阻塞，读取 ws 数据写入终端
-	wsReaderCopy(wsConn, execResp.Conn)
+	utils.WsReaderCopy(wsConn, execResp.Conn)
 
 	return nil
-
-}
-
-// 读取终端返回的数据, 写入到 ws 中
-func wsWriterCopy(reader io.Reader, writer *websocket.Conn) {
-
-	buf := make([]byte, 8192)
-	for {
-		nr, err := reader.Read(buf)
-		//fmt.Printf("终端输出的数据 ---> %s", buf[:nr])
-		if nr > 0 {
-			err := writer.WriteMessage(websocket.BinaryMessage, buf[:nr])
-			if err != nil {
-				return
-			}
-		}
-		if err != nil {
-			return
-		}
-	}
-
-}
-
-// 从 ws 读取用户输入的数据, 写入到终端中
-func wsReaderCopy(reader *websocket.Conn, writer io.Writer) {
-
-	for {
-		messageType, p, err := reader.ReadMessage()
-		if err != nil {
-			return
-		}
-
-		//fmt.Printf("用户输入的数据 ---> %s\n", p)
-		if messageType == websocket.TextMessage {
-			writer.Write(p)
-		}
-	}
 
 }

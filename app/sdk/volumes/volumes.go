@@ -3,16 +3,20 @@ package volumes
 import (
 	"dockerapi/app/sdk"
 	"errors"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	"log"
+	"strings"
 )
 
+type VolumeService struct{}
+
 /*
-	VolumesList
+	List
 	卷列表
 */
-func VolumesList() []Volume {
+func (vs VolumeService) List() []VolumeList {
 
 	volumes, err := sdk.DockerClient.VolumeList(sdk.DockerCtx, filters.Args{})
 	if err != nil {
@@ -20,11 +24,11 @@ func VolumesList() []Volume {
 	}
 
 	// 定义卷列表切片
-	result := make([]Volume, 0, len(volumes.Volumes))
+	result := make([]VolumeList, 0, len(volumes.Volumes))
 
 	for _, volume := range volumes.Volumes {
 		// 读取卷列表信息
-		tmp := Volume{
+		tmp := VolumeList{
 			CreatedAt: volume.CreatedAt,
 			Driver:    volume.Driver,
 			Name:      volume.Name,
@@ -40,26 +44,62 @@ func VolumesList() []Volume {
 }
 
 /*
-	VolumeSearch
+	Search
 	搜索卷
 */
-func VolumeSearch(volumeName string) error {
+func (vs VolumeService) Search(info string) []VolumeList {
 
-	for _, v := range VolumesList() {
-		if v.Name == volumeName {
-			return errors.New("无法创建卷, 它已存在")
-		}
+	volumes, err := sdk.DockerClient.VolumeList(sdk.DockerCtx, filters.Args{})
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	return nil
+	var volumesList []*types.Volume
+
+	if len(info) != 0 {
+		length, count := len(volumes.Volumes), 0
+		for count < length {
+			if strings.Contains(volumes.Volumes[count].Name, info) {
+				volumesList = append(volumesList, volumes.Volumes[count])
+				break
+			}
+			count++
+		}
+	} else {
+		volumesList = volumes.Volumes
+	}
+
+	result := make([]VolumeList, 0, len(volumes.Volumes))
+
+	for _, volume := range volumesList {
+
+		tmp := VolumeList{
+			CreatedAt: volume.CreatedAt,
+			Driver:    volume.Driver,
+			Name:      volume.Name,
+			Scope:     volume.Scope,
+			Status:    volume.Status,
+		}
+
+		result = append(result, tmp)
+
+	}
+
+	return result
 
 }
 
 /*
-	VolumeCreate
+	Create
 	创建卷
 */
-func VolumeCreate(req VolumeCreateStruct) error {
+func (vs VolumeService) Create(req VolumeCreateStruct) error {
+
+	for _, v := range vs.List() {
+		if v.Name == req.Name {
+			return errors.New("无法创建卷, 它已存在")
+		}
+	}
 
 	// 获取创建卷选项配置
 	options := volume.VolumeCreateBody{
@@ -67,10 +107,6 @@ func VolumeCreate(req VolumeCreateStruct) error {
 		DriverOpts: req.DriverOpts,
 		Labels:     req.Labels,
 		Name:       req.Name,
-	}
-
-	if err := VolumeSearch(req.Name); err != nil {
-		return err
 	}
 
 	_, err := sdk.DockerClient.VolumeCreate(sdk.DockerCtx, options)
@@ -84,10 +120,10 @@ func VolumeCreate(req VolumeCreateStruct) error {
 }
 
 /*
-	VolumeDelete
+	Delete
 	删除卷
 */
-func VolumeDelete(req VolumeDeleteStruct) error {
+func (vs VolumeService) Delete(req VolumeDeleteStruct) error {
 
 	for _, name := range req.Name {
 		err := sdk.DockerClient.VolumeRemove(sdk.DockerCtx, name, true)
