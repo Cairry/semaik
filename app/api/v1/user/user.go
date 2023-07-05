@@ -1,10 +1,10 @@
-package v1
+package user
 
 import (
 	"crypto/md5"
-	"dockerapi/app/model"
 	"dockerapi/app/response"
 	"dockerapi/app/service"
+	"dockerapi/app/service/user"
 	"dockerapi/global"
 	"encoding/hex"
 	"github.com/gin-gonic/gin"
@@ -20,8 +20,8 @@ type UserRouter struct{}
 func (u UserRouter) Login(c *gin.Context) {
 
 	var (
-		user model.User
-		req  model.User
+		use user.User
+		req user.User
 	)
 	_ = c.ShouldBindJSON(&req)
 
@@ -30,8 +30,8 @@ func (u UserRouter) Login(c *gin.Context) {
 	hashPassword := hex.EncodeToString(arr[:])
 
 	// 查询用户信息
-	err := global.GvaDatabase.Where("name = ?", req.Name).First(&user).Error
-	if err == gorm.ErrRecordNotFound || hashPassword != user.Password {
+	err := global.GvaDatabase.Where("name = ?", req.Name).First(&use).Error
+	if err == gorm.ErrRecordNotFound || hashPassword != use.Password {
 		response.Fail(c, "用户不存在或密码错误", "登陆失败")
 		return
 	}
@@ -51,19 +51,19 @@ func (u UserRouter) Login(c *gin.Context) {
 */
 func (u UserRouter) Register(c *gin.Context) {
 
-	var req model.User
-	var user model.User
+	var req user.User
+	var use user.User
 
 	_ = c.ShouldBindJSON(&req)
-	global.GvaDatabase.Where("name = ?", req.Name).First(&user)
-	if user.Name != "" {
+	global.GvaDatabase.Where("name = ?", req.Name).First(&use)
+	if use.Name != "" {
 		response.Fail(c, "用户已存在", "注册失败")
 		return
 	}
 
 	arr := md5.Sum([]byte(req.Password))
 	hashPassword := hex.EncodeToString(arr[:])
-	global.GvaDatabase.Create(&model.User{
+	global.GvaDatabase.Create(&user.User{
 		Name:     req.Name,
 		Password: hashPassword,
 	})

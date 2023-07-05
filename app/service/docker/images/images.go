@@ -1,7 +1,8 @@
 package images
 
 import (
-	"dockerapi/app/sdk"
+	"context"
+	"dockerapi/global"
 	"dockerapi/utils"
 	"github.com/docker/docker/api/types"
 	"io"
@@ -17,10 +18,10 @@ type ImageService struct{}
 	List
 	读取所有镜像
 */
-func (is ImageService) List() []ImageStruct {
+func (is ImageService) List(ctx context.Context) []ImageStruct {
 
 	// 读取镜像列表
-	images, err := sdk.DockerClient.ImageList(sdk.DockerCtx, types.ImageListOptions{All: true})
+	images, err := global.GvaDockerCli.ImageList(ctx, types.ImageListOptions{All: true})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -52,10 +53,10 @@ func (is ImageService) List() []ImageStruct {
 	Pull
 	拉取镜像
 */
-func (is ImageService) Pull(imageName string) error {
+func (is ImageService) Pull(ctx context.Context, imageName string) error {
 
 	// 拉取镜像
-	reader, err := sdk.DockerClient.ImagePull(sdk.DockerCtx, imageName, types.ImagePullOptions{})
+	reader, err := global.GvaDockerCli.ImagePull(ctx, imageName, types.ImagePullOptions{})
 	if err != nil {
 		log.Println(err)
 		return err
@@ -76,9 +77,9 @@ func (is ImageService) Pull(imageName string) error {
 	Delete
 	删除镜像
 */
-func (is ImageService) Delete(req ImageOperationStruct) error {
+func (is ImageService) Delete(ctx context.Context, req ImageOperationStruct) error {
 
-	_, err := sdk.DockerClient.ImageRemove(sdk.DockerCtx, req.Name, types.ImageRemoveOptions{})
+	_, err := global.GvaDockerCli.ImageRemove(ctx, req.Name, types.ImageRemoveOptions{})
 
 	return err
 
@@ -88,9 +89,9 @@ func (is ImageService) Delete(req ImageOperationStruct) error {
 	Search
 	搜索镜像
 */
-func (is ImageService) Search(info string) []ImageStruct {
+func (is ImageService) Search(ctx context.Context, info string) []ImageStruct {
 
-	images, err := sdk.DockerClient.ImageList(sdk.DockerCtx, types.ImageListOptions{All: true})
+	images, err := global.GvaDockerCli.ImageList(ctx, types.ImageListOptions{All: true})
 	if err != nil {
 		log.Fatal(err)
 	}

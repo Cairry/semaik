@@ -1,8 +1,9 @@
 package containers
 
 import (
-	"dockerapi/app/sdk"
-	"dockerapi/app/sdk/images"
+	"context"
+	"dockerapi/app/service/docker/images"
+	"dockerapi/global"
 	"dockerapi/utils"
 	"encoding/json"
 	"fmt"
@@ -24,10 +25,11 @@ type ContainerService struct{}
 	List
 	获取容器列表
 */
-func (cs ContainerService) List() []ContainerListStruct {
+func (cs ContainerService) List(ctx context.Context) []ContainerListStruct {
 
 	// 获取容器列表
-	containers, err := sdk.DockerClient.ContainerList(sdk.DockerCtx, types.ContainerListOptions{All: true})
+
+	containers, err := global.GvaDockerCli.ContainerList(ctx, types.ContainerListOptions{All: true})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -71,9 +73,9 @@ func (cs ContainerService) List() []ContainerListStruct {
 	Search
 	获取指定容器
 */
-func (cs ContainerService) Search(info string) []ContainerListStruct {
+func (cs ContainerService) Search(ctx context.Context, info string) []ContainerListStruct {
 
-	containers, err := sdk.DockerClient.ContainerList(sdk.DockerCtx, types.ContainerListOptions{})
+	containers, err := global.GvaDockerCli.ContainerList(ctx, types.ContainerListOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,7 +84,6 @@ func (cs ContainerService) Search(info string) []ContainerListStruct {
 
 	if len(info) != 0 {
 		length, count := len(containers), 0
-		fmt.Println("container ->", length)
 		for count < length {
 			for _, v := range containers[count].Names {
 				if strings.Contains(v, info) {
@@ -131,7 +132,7 @@ func (cs ContainerService) Search(info string) []ContainerListStruct {
 	Create
 	创建容器
 */
-func (cs ContainerService) Create(req ContainerCreateStruct) error {
+func (cs ContainerService) Create(ctx context.Context, req ContainerCreateStruct) error {
 
 	// 定义创建容器时的配置信息
 	config := &container.Config{
@@ -172,21 +173,21 @@ func (cs ContainerService) Create(req ContainerCreateStruct) error {
 	}
 
 	// 拉取镜像
-	err := images.ImageService{}.Pull(req.Image)
+	err := images.ImageService{}.Pull(ctx, req.Image)
 	if err != nil {
 		log.Println("Image pull failed:", err)
 		return err
 	}
 
 	// 创建容器
-	resp, err := sdk.DockerClient.ContainerCreate(sdk.DockerCtx, config, &hostConfig, nil, nil, req.Name)
+	resp, err := global.GvaDockerCli.ContainerCreate(ctx, config, &hostConfig, nil, nil, req.Name)
 	if err != nil {
 		log.Println("Container Create failed:", err)
 		return err
 	}
 
 	// 启动容器
-	err = sdk.DockerClient.ContainerStart(sdk.DockerCtx, resp.ID, types.ContainerStartOptions{})
+	err = global.GvaDockerCli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{})
 	if err != nil {
 		log.Println("Container Start failed:", err)
 		return err
@@ -199,7 +200,7 @@ func (cs ContainerService) Create(req ContainerCreateStruct) error {
 	Options
 	容器操作选项
 */
-func (cs ContainerService) Options(req ContainerOperationStruct) error {
+func (cs ContainerService) Options(ctx context.Context, req ContainerOperationStruct) error {
 
 	var (
 		err error
@@ -215,21 +216,21 @@ func (cs ContainerService) Options(req ContainerOperationStruct) error {
 	// 获取操作选项并执行
 	switch req.Operation {
 	case "start":
-		err = sdk.DockerClient.ContainerStart(sdk.DockerCtx, req.Name, types.ContainerStartOptions{})
+		err = global.GvaDockerCli.ContainerStart(ctx, req.Name, types.ContainerStartOptions{})
 	case "stop":
-		err = sdk.DockerClient.ContainerStop(sdk.DockerCtx, req.Name, nil)
+		err = global.GvaDockerCli.ContainerStop(ctx, req.Name, nil)
 	case "restart":
-		err = sdk.DockerClient.ContainerRestart(sdk.DockerCtx, req.Name, nil)
+		err = global.GvaDockerCli.ContainerRestart(ctx, req.Name, nil)
 	case "kill":
-		err = sdk.DockerClient.ContainerKill(sdk.DockerCtx, req.Name, "SIGKILL")
+		err = global.GvaDockerCli.ContainerKill(ctx, req.Name, "SIGKILL")
 	case "pause":
-		err = sdk.DockerClient.ContainerPause(sdk.DockerCtx, req.Name)
+		err = global.GvaDockerCli.ContainerPause(ctx, req.Name)
 	case "unpause":
-		err = sdk.DockerClient.ContainerUnpause(sdk.DockerCtx, req.Name)
+		err = global.GvaDockerCli.ContainerUnpause(ctx, req.Name)
 	case "rename":
-		err = sdk.DockerClient.ContainerRename(sdk.DockerCtx, req.Name, req.NewName)
+		err = global.GvaDockerCli.ContainerRename(ctx, req.Name, req.NewName)
 	case "remove":
-		err = sdk.DockerClient.ContainerRemove(sdk.DockerCtx, req.Name, options)
+		err = global.GvaDockerCli.ContainerRemove(ctx, req.Name, options)
 
 	}
 	return err
@@ -239,7 +240,7 @@ func (cs ContainerService) Options(req ContainerOperationStruct) error {
 	Logs
 	获取容器日志
 */
-func (cs ContainerService) Logs(req ContainerLogsStruct) (string, error) {
+func (cs ContainerService) Logs(ctx context.Context, req ContainerLogsStruct) (string, error) {
 
 	options := types.ContainerLogsOptions{
 		ShowStdout: true,
@@ -251,7 +252,7 @@ func (cs ContainerService) Logs(req ContainerLogsStruct) (string, error) {
 		options.Since = req.Mode
 	}
 
-	logs, err := sdk.DockerClient.ContainerLogs(sdk.DockerCtx, req.ContainerName, options)
+	logs, err := global.GvaDockerCli.ContainerLogs(ctx, req.ContainerName, options)
 	if err != nil {
 		log.Println(err)
 	}
@@ -268,9 +269,9 @@ func (cs ContainerService) Logs(req ContainerLogsStruct) (string, error) {
 	State
 	获取容器资源利用率
 */
-func (cs ContainerService) State(id string) (*ContainerStats, error) {
+func (cs ContainerService) State(ctx context.Context, id string) (*ContainerStats, error) {
 
-	res, err := sdk.DockerClient.ContainerStats(sdk.DockerCtx, id, false)
+	res, err := global.GvaDockerCli.ContainerStats(ctx, id, false)
 	if err != nil {
 		log.Println(err)
 		return nil, err
@@ -308,10 +309,10 @@ func (cs ContainerService) State(id string) (*ContainerStats, error) {
 	Ssh
 	连接容器终端
 */
-func (cs ContainerService) Ssh(req ContainerWsSshStruct, c *gin.Context, wsConn *websocket.Conn) (err error) {
+func (cs ContainerService) Ssh(ctx context.Context, req ContainerWsSshStruct, c *gin.Context, wsConn *websocket.Conn) (err error) {
 
 	// 连接容器
-	execResp, err := utils.ExecContainer(req.ContainerID, req.User, req.Command)
+	execResp, err := utils.ExecContainer(ctx, req.ContainerID, req.User, req.Command)
 	if err != nil {
 		log.Println("请求失败")
 		return err

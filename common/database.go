@@ -1,7 +1,8 @@
 package common
 
 import (
-	"dockerapi/app/model"
+	"dockerapi/app/service/docker/node"
+	"dockerapi/app/service/user"
 	"dockerapi/global"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -16,7 +17,8 @@ func init() {
 	}
 
 	// 迁移 User 表
-	_ = db.AutoMigrate(&model.User{})
+	_ = db.AutoMigrate(&user.User{})
+	_ = db.AutoMigrate(&node.DockerNode{})
 
 	global.GvaDatabase = db
 

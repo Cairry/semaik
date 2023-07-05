@@ -2,7 +2,8 @@ package docker
 
 import (
 	"dockerapi/app/response"
-	containers2 "dockerapi/app/sdk/containers"
+	containers2 "dockerapi/app/service/docker/containers"
+	"dockerapi/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 	"net/http"
@@ -17,10 +18,13 @@ type ContainersApi struct {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/list [get]
+//	@Router		/api/v1/clouds/node/:node_name/containers/list [get]
 func (container ContainersApi) List(ctx *gin.Context) {
 
-	containersList := container.containerService.List()
+	// docker node
+	middleware.InitCli(ctx)
+
+	containersList := container.containerService.List(ctx)
 	response.Success(ctx, containersList, "请求成功")
 
 }
@@ -30,12 +34,15 @@ func (container ContainersApi) List(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/Search [post]
+//	@Router		/api/v1/clouds/node/:node_name/containers/search [post]
 func (container ContainersApi) Search(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req containers2.ContainerListStruct
 	_ = ctx.ShouldBindJSON(&req)
-	containersList := container.containerService.Search(req.Name)
+	containersList := container.containerService.Search(ctx, req.Name)
 	response.Success(ctx, containersList, "查询成功")
 
 }
@@ -45,14 +52,18 @@ func (container ContainersApi) Search(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/create [post]
+//	@Router		/api/v1/clouds/node/:node_name/containers/create [post]
 func (container ContainersApi) Create(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req containers2.ContainerCreateStruct
 	_ = ctx.ShouldBindJSON(&req)
-	err := container.containerService.Create(req)
+	err := container.containerService.Create(ctx, req)
 	if err != nil {
 		response.Fail(ctx, nil, "创建失败")
+		return
 	} else {
 		response.Success(ctx, req, "创建成功")
 	}
@@ -64,12 +75,15 @@ func (container ContainersApi) Create(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/option [post]
+//	@Router		/api/v1/clouds/node/:node_name/containers/option [post]
 func (container ContainersApi) Options(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req containers2.ContainerOperationStruct
 	_ = ctx.ShouldBindJSON(&req)
-	err := container.containerService.Options(req)
+	err := container.containerService.Options(ctx, req)
 	if err != nil {
 		response.Fail(ctx, req.Operation, err.Error())
 	} else {
@@ -87,13 +101,18 @@ func (container ContainersApi) Options(ctx *gin.Context) {
 //	@Param		mode			path	string	false	"获取日志范围, all,1m,10m..."
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/log [post]
+//	@Router		/api/v1/clouds/node/:node_name/containers/log [post]
 func (container ContainersApi) Logs(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
+
 	var req containers2.ContainerLogsStruct
 	_ = ctx.ShouldBindJSON(&req)
-	out, err := container.containerService.Logs(req)
+	out, err := container.containerService.Logs(ctx, req)
 	if err != nil {
 		response.Fail(ctx, out, err.Error())
+		return
 	} else {
 		response.Success(ctx, out, "操作成功")
 	}
@@ -106,8 +125,11 @@ func (container ContainersApi) Logs(ctx *gin.Context) {
 //	@Param		containerId 	path	string	true	"容器ID"
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/state/:id [get]
+//	@Router		/api/v1/clouds/node/:node_name/containers/state/:container_id [get]
 func (container ContainersApi) State(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	containerID, ok := ctx.Params.Get("id")
 	if !ok {
@@ -115,13 +137,12 @@ func (container ContainersApi) State(ctx *gin.Context) {
 		return
 	}
 
-	res, err := container.containerService.State(containerID)
+	res, err := container.containerService.State(ctx, containerID)
 	if err != nil {
 		response.Fail(ctx, err, "请求失败")
 		return
 	} else {
 		response.Success(ctx, res, "请求成功")
-		return
 	}
 
 }
@@ -134,8 +155,11 @@ func (container ContainersApi) State(ctx *gin.Context) {
 //	@Param		command			path	string	true	"执行命令"
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/containers/state/:id [get]
+//	@Router		/api/v1/clouds/node/:node_name/containers/state/:id [get]
 func (container ContainersApi) Ssh(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	// 升级连接为 WebSocket
 	upgrader := websocket.Upgrader{
@@ -162,7 +186,7 @@ func (container ContainersApi) Ssh(ctx *gin.Context) {
 		Command:     []string{ctx.Query("command")},
 	}
 
-	err = container.containerService.Ssh(req, ctx, wsConn)
+	err = container.containerService.Ssh(ctx, req, ctx, wsConn)
 	if err != nil {
 		response.Fail(ctx, err, "连接失败")
 		return

@@ -1,7 +1,8 @@
 package utils
 
 import (
-	"dockerapi/app/sdk"
+	"context"
+	"dockerapi/global"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/gorilla/websocket"
@@ -49,7 +50,7 @@ func CalculateNetwork(network map[string]types.NetworkStats) (float64, float64) 
 }
 
 // ExecContainer 连接 Container
-func ExecContainer(containerID string, user string, command []string) (hr types.HijackedResponse, err error) {
+func ExecContainer(ctx context.Context, containerID string, user string, command []string) (hr types.HijackedResponse, err error) {
 
 	//exec 配置
 	execConfig := types.ExecConfig{
@@ -62,7 +63,7 @@ func ExecContainer(containerID string, user string, command []string) (hr types.
 	}
 
 	//创建 exec 实例
-	exec, err := sdk.DockerClient.ContainerExecCreate(sdk.DockerCtx, containerID, execConfig)
+	exec, err := global.GvaDockerCli.ContainerExecCreate(ctx, containerID, execConfig)
 	if err != nil {
 		log.Println("创建 exec 实例错误:", err)
 		return
@@ -75,7 +76,7 @@ func ExecContainer(containerID string, user string, command []string) (hr types.
 	}
 
 	// 连接 Container
-	resp, err := sdk.DockerClient.ContainerExecAttach(sdk.DockerCtx, exec.ID, attachConfig)
+	resp, err := global.GvaDockerCli.ContainerExecAttach(ctx, exec.ID, attachConfig)
 	if err != nil {
 		log.Println("连接 Container 错误:", err)
 		return

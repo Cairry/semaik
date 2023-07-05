@@ -1,7 +1,7 @@
 info:
   contact: {}
 paths:
-  /api/v1/containers/create:
+  /api/v1/clouds/node/:node_name/containers/create:
     post:
       produces:
       - application/json
@@ -17,7 +17,7 @@ paths:
       summary: 创建容器
       tags:
       - 容器
-  /api/v1/containers/list:
+  /api/v1/clouds/node/:node_name/containers/list:
     get:
       produces:
       - application/json
@@ -33,7 +33,7 @@ paths:
       summary: 获取所有容器列表
       tags:
       - 容器
-  /api/v1/containers/log:
+  /api/v1/clouds/node/:node_name/containers/log:
     post:
       parameters:
       - description: 容器名称
@@ -68,7 +68,7 @@ paths:
       summary: 容器日志
       tags:
       - 容器
-  /api/v1/containers/option:
+  /api/v1/clouds/node/:node_name/containers/option:
     post:
       produces:
       - application/json
@@ -84,7 +84,45 @@ paths:
       summary: 容器操作选项
       tags:
       - 容器
-  /api/v1/containers/state/:id:
+  /api/v1/clouds/node/:node_name/containers/search:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取指定容器
+      tags:
+      - 容器
+  /api/v1/clouds/node/:node_name/containers/state/:container_id:
+    get:
+      parameters:
+      - description: 容器ID
+        in: path
+        name: containerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 获取容器资源
+      tags:
+      - 容器
+  /api/v1/clouds/node/:node_name/containers/state/:id:
     get:
       parameters:
       - description: 容器ID
@@ -116,7 +154,7 @@ paths:
       summary: 容器终端
       tags:
       - 容器
-  /api/v1/images/delete:
+  /api/v1/clouds/node/:node_name/images/delete:
     post:
       parameters:
       - description: 镜像名称
@@ -138,7 +176,7 @@ paths:
       summary: 删除镜像
       tags:
       - 镜像
-  /api/v1/images/list:
+  /api/v1/clouds/node/:node_name/images/list:
     get:
       produces:
       - application/json
@@ -154,7 +192,7 @@ paths:
       summary: 获取所有镜像
       tags:
       - 镜像
-  /api/v1/images/pull:
+  /api/v1/clouds/node/:node_name/images/pull:
     post:
       parameters:
       - description: 镜像名称
@@ -176,7 +214,29 @@ paths:
       summary: 拉取镜像
       tags:
       - 镜像
-  /api/v1/networks/create:
+  /api/v1/clouds/node/:node_name/images/search:
+    post:
+      parameters:
+      - description: 镜像名称
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 搜索镜像
+      tags:
+      - 镜像
+  /api/v1/clouds/node/:node_name/networks/create:
     post:
       produces:
       - application/json
@@ -192,7 +252,7 @@ paths:
       summary: 创建网络
       tags:
       - 网络
-  /api/v1/networks/delete:
+  /api/v1/clouds/node/:node_name/networks/delete:
     post:
       produces:
       - application/json
@@ -208,7 +268,7 @@ paths:
       summary: 删除网络
       tags:
       - 网络
-  /api/v1/networks/list:
+  /api/v1/clouds/node/:node_name/networks/list:
     get:
       produces:
       - application/json
@@ -224,7 +284,23 @@ paths:
       summary: 获取所有网络列表
       tags:
       - 网络
-  /api/v1/volumes/create:
+  /api/v1/clouds/node/:node_name/networks/search:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 搜索网络
+      tags:
+      - 网络
+  /api/v1/clouds/node/:node_name/volumes/create:
     post:
       produces:
       - application/json
@@ -240,7 +316,7 @@ paths:
       summary: 创建卷
       tags:
       - 卷
-  /api/v1/volumes/delete:
+  /api/v1/clouds/node/:node_name/volumes/delete:
     post:
       produces:
       - application/json
@@ -256,7 +332,7 @@ paths:
       summary: 删除卷
       tags:
       - 卷
-  /api/v1/volumes/list:
+  /api/v1/clouds/node/:node_name/volumes/list:
     get:
       produces:
       - application/json
@@ -272,4 +348,68 @@ paths:
       summary: 获取所有卷
       tags:
       - 卷
+  /api/v1/clouds/node/:node_name/volumes/search:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"请求成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"请求失败"}'
+          schema:
+            type: string
+      summary: 搜索卷
+      tags:
+      - 卷
+  /api/v1/clouds/node/create:
+    post:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"创建成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"创建失败"}'
+          schema:
+            type: string
+      summary: 创建 Docker 节点
+      tags:
+      - 节点
+  /api/v1/clouds/node/delete:
+    delete:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"删除成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"删除失败"}'
+          schema:
+            type: string
+      summary: 删除 Docker 节点
+      tags:
+      - 节点
+  /api/v1/clouds/node/update:
+    put:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: '{"code":200,"data":{},"msg":"更新成功"}'
+          schema:
+            type: string
+        "400":
+          description: '{"code":400,"data":{},"msg":"更新失败"}'
+          schema:
+            type: string
+      summary: 更新 Docker 节点
+      tags:
+      - 节点
 swagger: "2.0"

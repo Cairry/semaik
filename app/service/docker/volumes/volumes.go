@@ -1,7 +1,8 @@
 package volumes
 
 import (
-	"dockerapi/app/sdk"
+	"context"
+	"dockerapi/global"
 	"errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
@@ -16,9 +17,9 @@ type VolumeService struct{}
 	List
 	卷列表
 */
-func (vs VolumeService) List() []VolumeList {
+func (vs VolumeService) List(ctx context.Context) []VolumeList {
 
-	volumes, err := sdk.DockerClient.VolumeList(sdk.DockerCtx, filters.Args{})
+	volumes, err := global.GvaDockerCli.VolumeList(ctx, filters.Args{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -47,9 +48,9 @@ func (vs VolumeService) List() []VolumeList {
 	Search
 	搜索卷
 */
-func (vs VolumeService) Search(info string) []VolumeList {
+func (vs VolumeService) Search(ctx context.Context, info string) []VolumeList {
 
-	volumes, err := sdk.DockerClient.VolumeList(sdk.DockerCtx, filters.Args{})
+	volumes, err := global.GvaDockerCli.VolumeList(ctx, filters.Args{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,9 +94,9 @@ func (vs VolumeService) Search(info string) []VolumeList {
 	Create
 	创建卷
 */
-func (vs VolumeService) Create(req VolumeCreateStruct) error {
+func (vs VolumeService) Create(ctx context.Context, req VolumeCreateStruct) error {
 
-	for _, v := range vs.List() {
+	for _, v := range vs.List(ctx) {
 		if v.Name == req.Name {
 			return errors.New("无法创建卷, 它已存在")
 		}
@@ -109,7 +110,7 @@ func (vs VolumeService) Create(req VolumeCreateStruct) error {
 		Name:       req.Name,
 	}
 
-	_, err := sdk.DockerClient.VolumeCreate(sdk.DockerCtx, options)
+	_, err := global.GvaDockerCli.VolumeCreate(ctx, options)
 
 	if err != nil {
 		return err
@@ -123,10 +124,10 @@ func (vs VolumeService) Create(req VolumeCreateStruct) error {
 	Delete
 	删除卷
 */
-func (vs VolumeService) Delete(req VolumeDeleteStruct) error {
+func (vs VolumeService) Delete(ctx context.Context, req VolumeDeleteStruct) error {
 
 	for _, name := range req.Name {
-		err := sdk.DockerClient.VolumeRemove(sdk.DockerCtx, name, true)
+		err := global.GvaDockerCli.VolumeRemove(ctx, name, true)
 		if err != nil {
 			return err
 		}

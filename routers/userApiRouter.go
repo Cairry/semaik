@@ -1,13 +1,15 @@
 package routers
 
 import (
-	"dockerapi/app/api/v1"
+	"dockerapi/app/api/v1/user"
 	"dockerapi/global"
 )
 
 func init() {
 
-	v := new(v1.UserRouter)
+	var (
+		v user.UserRouter
+	)
 	api := global.GvaGinEngine.Group("auth")
 	{
 

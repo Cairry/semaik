@@ -16,7 +16,7 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/api/v1/containers/create": {
+        "/api/v1/clouds/node/:node_name/containers/create": {
             "post": {
                 "produces": [
                     "application/json"
@@ -41,7 +41,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/containers/list": {
+        "/api/v1/clouds/node/:node_name/containers/list": {
             "get": {
                 "produces": [
                     "application/json"
@@ -66,7 +66,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/containers/log": {
+        "/api/v1/clouds/node/:node_name/containers/log": {
             "post": {
                 "produces": [
                     "application/json"
@@ -119,7 +119,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/containers/option": {
+        "/api/v1/clouds/node/:node_name/containers/option": {
             "post": {
                 "produces": [
                     "application/json"
@@ -144,7 +144,66 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/containers/state/:id": {
+        "/api/v1/clouds/node/:node_name/containers/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "容器"
+                ],
+                "summary": "获取指定容器",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"请求成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/:node_name/containers/state/:container_id": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "容器"
+                ],
+                "summary": "获取容器资源",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "容器ID",
+                        "name": "containerId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"请求成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/:node_name/containers/state/:id": {
             "get": {
                 "produces": [
                     "application/json"
@@ -192,7 +251,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/images/delete": {
+        "/api/v1/clouds/node/:node_name/images/delete": {
             "post": {
                 "produces": [
                     "application/json"
@@ -226,7 +285,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/images/list": {
+        "/api/v1/clouds/node/:node_name/images/list": {
             "get": {
                 "produces": [
                     "application/json"
@@ -251,7 +310,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/images/pull": {
+        "/api/v1/clouds/node/:node_name/images/pull": {
             "post": {
                 "produces": [
                     "application/json"
@@ -285,7 +344,41 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/networks/create": {
+        "/api/v1/clouds/node/:node_name/images/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "镜像"
+                ],
+                "summary": "搜索镜像",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "镜像名称",
+                        "name": "name",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"请求成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/:node_name/networks/create": {
             "post": {
                 "produces": [
                     "application/json"
@@ -310,7 +403,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/networks/delete": {
+        "/api/v1/clouds/node/:node_name/networks/delete": {
             "post": {
                 "produces": [
                     "application/json"
@@ -335,7 +428,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/networks/list": {
+        "/api/v1/clouds/node/:node_name/networks/list": {
             "get": {
                 "produces": [
                     "application/json"
@@ -360,7 +453,32 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/volumes/create": {
+        "/api/v1/clouds/node/:node_name/networks/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "网络"
+                ],
+                "summary": "搜索网络",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"请求成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/:node_name/volumes/create": {
             "post": {
                 "produces": [
                     "application/json"
@@ -385,7 +503,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/volumes/delete": {
+        "/api/v1/clouds/node/:node_name/volumes/delete": {
             "post": {
                 "produces": [
                     "application/json"
@@ -410,7 +528,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/api/v1/volumes/list": {
+        "/api/v1/clouds/node/:node_name/volumes/list": {
             "get": {
                 "produces": [
                     "application/json"
@@ -428,6 +546,106 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/:node_name/volumes/search": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "卷"
+                ],
+                "summary": "搜索卷",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"请求成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"请求失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/create": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "节点"
+                ],
+                "summary": "创建 Docker 节点",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"创建成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"创建失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/delete": {
+            "delete": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "节点"
+                ],
+                "summary": "删除 Docker 节点",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"删除成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"删除失败\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/clouds/node/update": {
+            "put": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "节点"
+                ],
+                "summary": "更新 Docker 节点",
+                "responses": {
+                    "200": {
+                        "description": "{\"code\":200,\"data\":{},\"msg\":\"更新成功\"}",
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    "400": {
+                        "description": "{\"code\":400,\"data\":{},\"msg\":\"更新失败\"}",
                         "schema": {
                             "type": "string"
                         }

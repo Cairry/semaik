@@ -2,7 +2,8 @@ package docker
 
 import (
 	"dockerapi/app/response"
-	volumes2 "dockerapi/app/sdk/volumes"
+	volumes2 "dockerapi/app/service/docker/volumes"
+	"dockerapi/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,10 +16,13 @@ type VolumesApi struct {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/volumes/list [get]
+//	@Router		/api/v1/clouds/node/:node_name/volumes/list [get]
 func (volume VolumesApi) List(ctx *gin.Context) {
 
-	volumesList := volume.volumeService.List()
+	// docker node
+	middleware.InitCli(ctx)
+
+	volumesList := volume.volumeService.List(ctx)
 	response.Success(ctx, volumesList, "请求成功")
 
 }
@@ -28,12 +32,15 @@ func (volume VolumesApi) List(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/volumes/search [post]
+//	@Router		/api/v1/clouds/node/:node_name/volumes/search [post]
 func (volume VolumesApi) Search(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req volumes2.VolumeList
 	_ = ctx.ShouldBindJSON(&req)
-	volumeList := volume.volumeService.Search(req.Name)
+	volumeList := volume.volumeService.Search(ctx, req.Name)
 	response.Success(ctx, volumeList, "查询成功")
 
 }
@@ -43,14 +50,18 @@ func (volume VolumesApi) Search(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/volumes/create [post]
+//	@Router		/api/v1/clouds/node/:node_name/volumes/create [post]
 func (volume VolumesApi) Create(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req volumes2.VolumeCreateStruct
 	_ = ctx.ShouldBindJSON(&req)
-	err := volume.volumeService.Create(req)
+	err := volume.volumeService.Create(ctx, req)
 	if err != nil {
 		response.Fail(ctx, err.Error(), "创建失败")
+		return
 	} else {
 		response.Success(ctx, req, "创建成功")
 	}
@@ -62,14 +73,18 @@ func (volume VolumesApi) Create(ctx *gin.Context) {
 //	@Produce	json
 //	@Success 	200 {string}	json "{"code":200,"data":{},"msg":"请求成功"}"
 //  @Failure	400 {string}	json "{"code":400,"data":{},"msg":"请求失败"}"
-//	@Router		/api/v1/volumes/delete [post]
+//	@Router		/api/v1/clouds/node/:node_name/volumes/delete [post]
 func (volume VolumesApi) Delete(ctx *gin.Context) {
+
+	// docker node
+	middleware.InitCli(ctx)
 
 	var req volumes2.VolumeDeleteStruct
 	_ = ctx.ShouldBindJSON(&req)
-	err := volume.volumeService.Delete(req)
+	err := volume.volumeService.Delete(ctx, req)
 	if err != nil {
 		response.Fail(ctx, err.Error(), "删除失败")
+		return
 	} else {
 		response.Success(ctx, req, "删除成功")
 	}

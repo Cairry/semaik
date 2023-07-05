@@ -1,7 +1,8 @@
 package networks
 
 import (
-	"dockerapi/app/sdk"
+	"context"
+	"dockerapi/global"
 	"errors"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/network"
@@ -15,9 +16,9 @@ type NetworkService struct{}
 	List
 	网络列表
 */
-func (ns NetworkService) List() []NetworkList {
+func (ns NetworkService) List(ctx context.Context) []NetworkList {
 
-	networks, err := sdk.DockerClient.NetworkList(sdk.DockerCtx, types.NetworkListOptions{})
+	networks, err := global.GvaDockerCli.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -49,9 +50,9 @@ func (ns NetworkService) List() []NetworkList {
 	Search
 	搜索网络
 */
-func (ns NetworkService) Search(info string) []NetworkList {
+func (ns NetworkService) Search(ctx context.Context, info string) []NetworkList {
 
-	networks, err := sdk.DockerClient.NetworkList(sdk.DockerCtx, types.NetworkListOptions{})
+	networks, err := global.GvaDockerCli.NetworkList(ctx, types.NetworkListOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,10 +94,10 @@ func (ns NetworkService) Search(info string) []NetworkList {
 	Create
 	创建网络
 */
-func (ns NetworkService) Create(req NetworkCreateStruct) error {
+func (ns NetworkService) Create(ctx context.Context, req NetworkCreateStruct) error {
 
 	// 先判断是否存在
-	for _, v := range ns.List() {
+	for _, v := range ns.List(ctx) {
 		if v.Name == req.Name {
 			return errors.New("无法创建网络, 它已存在")
 		}
@@ -127,7 +128,7 @@ func (ns NetworkService) Create(req NetworkCreateStruct) error {
 		options.IPAM = &reqIPAM
 	}
 
-	if _, err := sdk.DockerClient.NetworkCreate(sdk.DockerCtx, req.Name, options); err != nil {
+	if _, err := global.GvaDockerCli.NetworkCreate(ctx, req.Name, options); err != nil {
 		return err
 	}
 	return nil
@@ -137,10 +138,10 @@ func (ns NetworkService) Create(req NetworkCreateStruct) error {
 	Delete
 	删除网络
 */
-func (ns NetworkService) Delete(req NetworkDeleteStruct) error {
+func (ns NetworkService) Delete(ctx context.Context, req NetworkDeleteStruct) error {
 
 	for _, name := range req.Name {
-		if err := sdk.DockerClient.NetworkRemove(sdk.DockerCtx, name); err != nil {
+		if err := global.GvaDockerCli.NetworkRemove(ctx, name); err != nil {
 			return err
 		}
 
